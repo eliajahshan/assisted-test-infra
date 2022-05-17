@@ -12,7 +12,9 @@ function version_is_greater() {
     false
 }
 
-function setup_epel() {
+function install_libvirt() {
+    source /etc/os-release  # This should set `PRETTY_NAME` as environment variable
+
     # RHEL and CentOS require epel-release for swtpm and swtpm-tools packages
     case "${PRETTY_NAME}" in
     "Red Hat Enterprise Linux 8"* | "CentOS Linux 8"* | "Rocky Linux 8"*)
@@ -24,20 +26,12 @@ function setup_epel() {
             https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
         ;;
     esac
-}
 
-function install_libvirt() {
-    source /etc/os-release  # This should set `PRETTY_NAME` as environment variable
-
-    if [ "${DISK_ENCRYPTION_MODE:-}" == "tpmv2" ]; then
-        setup_epel
-
-        # The package selinux-policy should be installed first because otherwise, RPMs install will fail due to a lack of SELinux config.
-        # Some RPMs have SELinux plugins that will search for /etc/selinux/targeted/contexts/files/file_contexts
-        # See https://access.redhat.com/solutions/6062341
-        echo "Install selinux-policy RPM"
-        sudo dnf install -y selinux-policy
-    fi
+    # The package selinux-policy should be installed first because otherwise, RPMs install will fail due to a lack of SELinux config.
+    # Some RPMs have SELinux plugins that will search for /etc/selinux/targeted/contexts/files/file_contexts
+    # See https://access.redhat.com/solutions/6062341
+    echo "Install selinux-policy RPM"
+    sudo dnf install -y selinux-policy
 
     echo "Installing libvirt..."
     sudo dnf install -y \
@@ -45,14 +39,9 @@ function install_libvirt() {
         libvirt-devel \
         libvirt-daemon-kvm \
         qemu-kvm \
-        libgcrypt
-
-    if [ "${DISK_ENCRYPTION_MODE:-}" == "tpmv2" ]; then
-        echo "Installing swtpm packages..."
-        sudo dnf install -y \
-            swtpm \
-            swtpm-tools
-    fi
+        libgcrypt \
+        swtpm \
+        swtpm-tools
 
     sudo systemctl enable libvirtd
 
