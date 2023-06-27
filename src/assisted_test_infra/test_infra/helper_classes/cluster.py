@@ -41,6 +41,8 @@ class Cluster(BaseCluster):
         nodes: Optional[Nodes] = None,
     ):
         self._is_installed = False
+        log.warning("cluster created")
+
 
         super().__init__(api_client, config, infra_env_config, nodes)
 
